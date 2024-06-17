@@ -12,45 +12,38 @@
 
 int main(int argc, char const *argv[]) {
     /* code */
-    const char *image = "test.jpg";
-
-    // load image
-    int x, y, channels_in_file, desired_channels = 3;
-    unsigned char* data = stbi_load(image, &x, &y, &channels_in_file, desired_channels);
-    if (!data) {
-        fprintf(stderr, "fail to read image: %s\n", image);
+    const char *origin = "test.jpg";
+    int width, height, channels;
+    unsigned char* image = stbi_load(origin, &width, &height, &channels, 0);
+    if (image == NULL) {
+        printf("Error in loading the image !\n");
         return -1;
     }
 
-    fprintf(stdout, "image:%s, x:%d, y:%d, channels_in_file:%d, desired_channels:%d\n", image, x, y, channels_in_file, desired_channels);
-
-    // resize image
-    int width_resize = x * 1.5, height_resize = y * 1.5;
-    unsigned char* output_pixels = (unsigned char*)malloc(width_resize * height_resize * desired_channels);
-    int ret = stbir_resize_uint8(data, x, y, 0, output_pixels, width_resize, height_resize, 0, desired_channels);
-    if (ret == 0) {
-        fprintf(stderr, "fail to resize image: %s\n", image);
+    int output_width = width * 0.5;  // new width
+    int output_height = height * 0.5;  // new height
+    unsigned char* output_image = (unsigned char*) malloc(output_width * output_height * channels);
+    if (output_image == NULL) {
+        printf("Error in allocating memory for the output image !\n");
         return -1;
     }
 
-    // write(save) image
-    // const std::string save_name_png = image + ".png";
-    const char *save_name_jpg = "output.jpg";
+    const char *output = "output.jpg";
+    stbir_resize_uint8(image, width, height, 0, output_image, output_width, output_height, 0, channels);
+    int ret = stbi_write_jpg(output, output_width, output_height, channels, output_image, 100);
+
     const char *save_name_png = "output.png";
-
-    ret = stbi_write_png(save_name_png, width_resize, height_resize, desired_channels, output_pixels, 0);
+    ret = stbi_write_png(save_name_png, output_width, output_height, channels, output_image, 0);
     if (ret == 0) {
-    	fprintf(stderr, "fail to write image png: %s\n", image);
-    	return -1;
-    }
-
-    ret = stbi_write_jpg(save_name_jpg, width_resize, height_resize, desired_channels, output_pixels, 90);
-    if (ret == 0) {
-        fprintf(stderr, "fail to write image jpg: %s\n", image);
+        fprintf(stderr, "fail to write image png: %s\n", image);
         return -1;
     }
 
-    free(data);
-    free(output_pixels);
+    stbi_image_free(image);
+    free(output_image);
+    
     return 0;
 }
+
+
+
